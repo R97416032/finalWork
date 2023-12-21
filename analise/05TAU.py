@@ -7,6 +7,14 @@ cd56lcd16h_path="../data/raw/gse212890/h5ad/cd56lcd16h.h5ad"
 cd56hcd16l_path="../data/raw/gse212890/h5ad/cd56hcd16l.h5ad"
 def tau(path):
     adata=sc.read_h5ad(path)
+    sc.pl.highest_expr_genes(adata, n_top=20, )
+    sc.pp.filter_cells(adata, min_genes=200)
+    sc.pp.filter_genes(adata, min_cells=3)
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
+    adata.raw = adata
+    print(adata)
     tau_mean=[]
     tau_median=[]
     genes=adata.var["gene"]
