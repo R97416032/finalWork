@@ -8,20 +8,24 @@ import polars as pl
 cd56hcd16l="../data/raw/gse212890/h5ad/tau/cd56hcd16l_tau_var.csv"
 cd56lcd16h="../data/raw/gse212890/h5ad/tau/cd56lcd16h_tau_var.csv"
 
-def see_distribution(path):
+def see_distribution(path,mean):
 
     adata=pd.read_csv(path)
 
+    if mean:
+        seaborn.distplot(adata[adata["gene_type"]=="protein_coding"]['tau_usemean'],bins=50)
+        seaborn.distplot(adata[adata["gene_type"]=="lncRNA"]['tau_usemean'],bins=50)
+        plt.show()
+    else:
+        seaborn.distplot(adata[adata["gene_type"] == "protein_coding"]['tau_usemedian'], bins=50)
+        seaborn.distplot(adata[adata["gene_type"] == "lncRNA"]['tau_usemedian'], bins=50)
+        plt.show()
+# see_distribution(cd56lcd16h,True)
+# see_distribution(cd56hcd16l,True)
 
-    seaborn.distplot(adata[adata["gene_type"]=="protein_coding"]['tau_usemean'],bins=50)
-    seaborn.distplot(adata[adata["gene_type"]=="lncRNA"]['tau_usemean'],bins=50)
-
-    plt.show()
-# see_distribution(cd56lcd16h)
-# see_distribution(cd56hcd16l)
-def get_ranks(path):
+def get_ranks(path,n):
     adata = sc.read_h5ad(path)
-    sc.tl.rank_genes_groups(adata,groupby="celltype",n_genes=100)
+    sc.tl.rank_genes_groups(adata,groupby="celltype",n_genes=n)
     sc.pl.rank_genes_groups(adata)
     result = adata.uns['rank_genes_groups']
     groups = result['names'].dtype.names
@@ -49,14 +53,13 @@ def get_geneset4type(tau_path,ranks_path,threshold):
 def see_typegenes(typegenes_path,h5adpath):
     adata=sc.read_h5ad(h5adpath)
     print(adata)
-    exit()
     typegenes=pd.read_csv(typegenes_path).fillna("AA")
 
     dict =typegenes.to_dict(orient='list')
     marker_genes_dict={}
     print(marker_genes_dict)
     for key,value in dict.items():
-        marker_genes_dict[key]=[x for x in value if x!="AA"]
+        marker_genes_dict[key]=[x for x in value[0:20] if x!="AA"]
 
     print(marker_genes_dict)
     sc.pl.dotplot(adata, marker_genes_dict ,groupby="celltype")
@@ -64,17 +67,24 @@ def see_typegenes(typegenes_path,h5adpath):
 
 cd56hcd16lh5ad="../data/raw/gse212890/h5ad/tau/cd56hcd16l_tau.h5ad"
 cd56lcd16hh5ad="../data/raw/gse212890/h5ad/tau/cd56lcd16h_tau.h5ad"
+#获取ranks
+# get_ranks(cd56hcd16lh5ad,150)
+get_ranks(cd56lcd16hh5ad,300)
 
-typespath="../data/raw/gse212890/type_genes/cd56hcd16ltype_genes.csv"
-see_typegenes(typespath,cd56hcd16lh5ad)
-exit()
 
-get_ranks(cd56hcd16lh5ad)
-get_ranks(cd56lcd16hh5ad)
-
-ranks_path="../data/raw/gse212890/ranks_gene/cd56hcd16l_tau.csv"
-get_geneset4type(cd56hcd16l,ranks_path,0.70)
+#获取marker
+# ranks_path="../data/raw/gse212890/ranks_gene/cd56hcd16l_tau.csv"
+# get_geneset4type(cd56hcd16l,ranks_path,0.70)
 ranks_path="../data/raw/gse212890/ranks_gene/cd56lcd16h_tau.csv"
-get_geneset4type(cd56lcd16h,ranks_path,0.75)
+get_geneset4type(cd56lcd16h,ranks_path,0.70)
+
+# typespath_hl="../data/raw/gse212890/type_genes/cd56hcd16ltype_genes.csv"
+# see_typegenes(typespath_hl,cd56hcd16lh5ad)
+
+typespath_lh="../data/raw/gse212890/type_genes/cd56lcd16htype_genes.csv"
+see_typegenes(typespath_lh,cd56lcd16hh5ad)
+
+
+
 
 
