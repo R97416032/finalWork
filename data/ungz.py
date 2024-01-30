@@ -7,7 +7,7 @@ from utils.decompress import un_gz
 # un_gz("raw/gse212890/GSE212890_NK_counts.mtx.gz")
 # un_gz("raw/gse212890/GSE212890_NK_metadata.csv.gz")
 
-path="raw/gse156728/metadata/"
+path="raw/gse156728/CD8/"
 
 def ugz(path):
     paths=os.listdir(path)

@@ -25,7 +25,7 @@ def addGenetype(h5adpath):
     genetypes=[]
     for gene in genes:
         if gene in data["gene_name"].to_list():
-            genetypes.append(data[data["gene_name"]=="FAM87B"]["gene_type"].to_list()[0])
+            genetypes.append(data[data["gene_name"]==gene]["gene_type"].to_list()[0])
             genelist.append(gene)
 
         elif gene in lncRNAs:
@@ -41,7 +41,7 @@ def addGenetype(h5adpath):
 # names=os.listdir(path)
 # for n in names:
 #     read(path+n,metapath)
-h5adpath="../data/raw/gse156728/CD8/h5ad/GSE156728_BC_10X.CD8.h5ad"
+# h5adpath="../data/raw/gse156728/CD8/h5ad/GSE156728_BC_10X.CD8.h5ad"
 # addGenetype(h5adpath)
 path="../data/raw/gse156728/CD8/h5ad/"
 names=os.listdir(path)
@@ -52,7 +52,6 @@ lncRNAs = pd.read_table(lncRNApath, header=None)[0].to_list()
 data = genecode[genecode["gene_type"].isin(["lncRNA","protein_coding"])]
 i=0
 for n in names:
-
     print(path+n)
     addGenetype(path+n)
     print(">>>>>>>>>>>>>>>>>" + str(i))
