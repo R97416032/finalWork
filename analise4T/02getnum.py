@@ -54,7 +54,20 @@ def  getexpression4mean(path,genetype):
         df[t]=num
     df.to_csv(path.replace("/qch5ad/","/nums/")+genetype+"_mean.csv",index=None)
 
-
+def getgenenums(path,genetype):
+    types = getALlcluster(path)
+    datanames = os.listdir(path)
+    datanames.sort()
+    df = pd.DataFrame()
+    df["names"] = [x.replace(".h5ad", "").replace(x.split("_")[0] + "_", "").replace("_qc", "") for x in datanames]
+    for t in types:
+        num = []
+        for n in datanames:
+            adata = sc.read_h5ad(path + n)
+            num.append(
+                round(np.mean(sum(adata[adata.obs["meta.cluster"] == t][:, adata.var["gene_type"] == genetype].X)), 2))
+        df[t] = num
+    df.to_csv(path.replace("/qch5ad/", "/nums/") + genetype + "_mean.csv", index=None)
 path = "../data/raw/gse156728/CD8/qch5ad/"
 # getnum417cluster(path)
 getexpression4mean(path,"lncRNA")
