@@ -1,10 +1,16 @@
+import os
+
 import numpy as np
+import pandas as pd
 import scanpy as sc
+import seaborn
+from matplotlib import pyplot as plt
+
 
 def tau(path):
     adata=sc.read_h5ad(path)
     print(adata)
-    sc.pl.highest_expr_genes(adata, n_top=20, )
+    # sc.pl.highest_expr_genes(adata, n_top=20, )
     sc.pp.filter_cells(adata, min_genes=200)
     sc.pp.filter_genes(adata, min_cells=3)
     sc.pp.normalize_total(adata, target_sum=1e4)
@@ -42,16 +48,86 @@ def tau(path):
     adata.var["tau_usemedian"]=tau_median
     adata.var["tau_usemean"].replace(-np.inf,0,inplace=True)
     adata.var["tau_usemedian"].replace(-np.inf,0,inplace=True)
-    print(vars)
+    # print(vars)
     print(adata)
     print(len(vars))
     adata.var["vars"]=vars
+    print(adata)
+    adata.var.to_csv(path.replace('.h5ad', '_tau_var.csv').replace("/qch5ad/","/qch5ad_tau/"),index=None)
+    adata.write(path.replace(".h5ad", "_tau.h5ad").replace("/qch5ad/","/qch5ad_tau/"))
 
 
-    # adata.var.to_csv(path.replace('.h5ad', '_tau_var.csv').replace("/h5ad/","/h5ad/tau/"))
-    # adata.write(path.replace(".h5ad", "_tau.h5ad").replace("/h5ad/","/h5ad/tau/"))
+def see_distribution(path,mean):
+
+    adata=pd.read_csv(path)
+
+    if mean:
+        seaborn.distplot(adata[adata["gene_type"]=="protein_coding"]['tau_usemean'],bins=50)
+        seaborn.distplot(adata[adata["gene_type"]=="lncRNA"]['tau_usemean'],bins=50)
+        plt.show()
+    else:
+        seaborn.distplot(adata[adata["gene_type"] == "protein_coding"]['tau_usemedian'], bins=50)
+        seaborn.distplot(adata[adata["gene_type"] == "lncRNA"]['tau_usemedian'], bins=50)
+        plt.show()
+
+def find(tau,h5ad,threshold):
+    tau=pd.read_csv(tau)
+    adata=sc.read_h5ad(h5ad)
+    tau_genes = tau[tau["tau_usemean"] >= threshold][["gene", "tau_usemean"]]
+    celltype=list(set(adata.obs["meta.cluster"]))
+    celltype.sort()
+    dict={}
+    for c in celltype:
+        dict.update({c:[]})
+    for g in tau_genes["gene"]:
+        temp=""
+        maxexp=0
+        for type in celltype:
+            if np.mean(adata[adata.obs["meta.cluster"] == type][:,g].X.toarray().reshape(-1))>maxexp :
+                if sum(adata[adata.obs["meta.cluster"] == type][:,g].X.toarray().reshape(-1)>0)/len(adata[adata.obs["meta.cluster"] == type][:,g].X.toarray().reshape(-1))>=0.05:
+                    temp=type
+                    maxexp=np.mean(adata[adata.obs["meta.cluster"] == type][:,g].X.toarray().reshape(-1))
+        if temp in celltype:
+            mark=dict.get(temp)
+            mark.append(g)
+            dict.update({temp:mark})
+    df = pd.DataFrame.from_dict(dict, orient='index').transpose()
+    df.to_csv(h5ad.replace("/h5ad/","/marker/").replace("_tau.h5ad","_marker.csv"))
 
 
-path="../data/raw/gse156728/CD8/qch5ad/GSE156728_BC_10X.CD8_qc.h5ad"
+path="../data/raw/gse156728/CD8/qch5ad/"
+taupath="../data/raw/gse156728/CD8/qch5ad_tau/"
+
+
+
 #注意路径需要qc后的新路径
-tau(path)
+# names=os.listdir(path)
+# taucsvs=os.listdir(taupath)
+# for n in names:
+#     print(n)
+#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+#     tau(path+n)
+#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
+# for n in taucsvs:
+#     if(".h5ad" in n ):
+#         continue
+#     else:
+#         print(n)
+#         see_distribution(taupath+n,True)
+csv_path="../data/raw/gse156728/CD8/qch5ad_tau/csv/"
+h5ad_path="../data/raw/gse156728/CD8/qch5ad_tau/h5ad/"
+csv_list=os.listdir(csv_path)
+h5ad_list=os.listdir(h5ad_path)
+csv_list.sort()
+h5ad_list.sort()
+
+for c,h in zip(csv_list,h5ad_list):
+    print(c)
+    print(h)
+    print(">>>>>>>>>>>>>>>>>>>>>>")
+    find(csv_path+c,h5ad_path+h,0.8)
+
+
+
+
