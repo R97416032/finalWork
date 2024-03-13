@@ -20,6 +20,7 @@ def tau(path):
     print(adata)
     tau_mean=[]
     tau_median=[]
+    tau_cluster=[]
     genes=adata.var["gene"]
     clusters=list(set(adata.obs["meta.cluster"]))
     clusters.sort()
@@ -28,24 +29,27 @@ def tau(path):
     for g in genes:
         mean=[]
         median=[]
+
         vars.append(np.var(adata[:,adata.var["gene"]==g].X.toarray()))
         for c in clusters:
             mean.append(np.mean(adata[adata.obs["meta.cluster"]==c,adata.var["gene"]==g].X.toarray()))
             median.append(np.median(adata[adata.obs["meta.cluster"] == c, adata.var["gene"] == g].X.toarray()))
         a=1/(len(clusters)-1)
         maxmean=np.max(mean)
-        maxmedian=np.max(mean)
+        # maxmedian=np.max(mean)
+        tau_cluster.append(clusters[np.argmax(mean)])
         if maxmean!=0:
             tau_mean.append(a*(len(clusters)-np.sum(mean)/maxmean))
         else:
             tau_mean.append(0)
-        if maxmedian!=0:
-            tau_median.append(a*(len(clusters)-np.sum(median)/maxmedian))
-
-        else:
-            tau_median.append(0)
+        # if maxmedian!=0:
+        #     tau_median.append(a*(len(clusters)-np.sum(median)/maxmedian))
+        #
+        # else:
+        #     tau_median.append(0)
     adata.var["tau_usemean"]=tau_mean
     adata.var["tau_usemedian"]=tau_median
+    adata.var["tau_cluster"] = tau_cluster
     adata.var["tau_usemean"].replace(-np.inf,0,inplace=True)
     adata.var["tau_usemedian"].replace(-np.inf,0,inplace=True)
     # print(vars)
@@ -94,39 +98,6 @@ def find(tau,h5ad,threshold):
     df = pd.DataFrame.from_dict(dict, orient='index').transpose()
     df.to_csv(h5ad.replace("/h5ad/","/marker/").replace("_tau.h5ad","_marker.csv"))
 
-
-path="../data/raw/gse156728/CD8/qch5ad/"
-taupath="../data/raw/gse156728/CD8/qch5ad_tau/"
-
-
-
-#注意路径需要qc后的新路径
-# names=os.listdir(path)
-# taucsvs=os.listdir(taupath)
-# for n in names:
-#     print(n)
-#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-#     tau(path+n)
-#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
-# for n in taucsvs:
-#     if(".h5ad" in n ):
-#         continue
-#     else:
-#         print(n)
-#         see_distribution(taupath+n,True)
-csv_path="../data/raw/gse156728/CD8/qch5ad_tau/csv/"
-h5ad_path="../data/raw/gse156728/CD8/qch5ad_tau/h5ad/"
-csv_list=os.listdir(csv_path)
-h5ad_list=os.listdir(h5ad_path)
-csv_list.sort()
-h5ad_list.sort()
-
-for c,h in zip(csv_list,h5ad_list):
-    print(c)
-    print(h)
-    print(">>>>>>>>>>>>>>>>>>>>>>")
-    find(csv_path+c,h5ad_path+h,0.8)
 
 
 
