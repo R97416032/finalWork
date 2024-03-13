@@ -31,8 +31,13 @@ def get_genelist(path,pt,lt):
     lsv=lncRNAs_var[np.where(lncRNAs_var)[0]].index
     resp=list(set(ps.values.tolist())&set(psv.values.tolist()))
     resl=list(set(ls.values.tolist())&set(lsv.values.tolist()))
-
-    return resp+resl
+    with open(path.replace("/h5ad/","/genelists/").replace("_qc_tau.h5ad","_lnc.txt"), 'w') as f:
+        for i in resl:
+            f.write(i + '\n')
+    with open(path.replace("/h5ad/", "/genelists/").replace("_qc_tau.h5ad", "_protein.txt"), 'w') as f:
+        for i in resp:
+            f.write(i + '\n')
+    return resp,resl
 def getCoexpress(path,genelist):
     n=len(genelist)
     adata=sc.read_h5ad(path)
@@ -59,8 +64,8 @@ for n in names:
     print(path+n)
     print(">>>>>>>>>>>>>>")
     a, b = getNum(path+n, 0.10)
-    listgene = get_genelist(path+n, a, b)
-    print(len(listgene))
+    p,l = get_genelist(path+n, a, b)
+    print(len(p),">>>>>>>",len(l))
     # getCoexpress(path+n, listgene)
     # exit()
 
