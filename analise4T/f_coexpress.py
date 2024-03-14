@@ -21,23 +21,31 @@ def getNum(path,threshold):
 
 def get_genelist(path,pt,lt):
     adata=sc.read_h5ad(path)
-    proteins=adata[:,adata.var["gene_type"]=="protein_coding"].var["tau_usemean"]>=pt
-    proteins_var = adata[:, adata.var["gene_type"] == "protein_coding"].var["vars"] <= 0.5
-    lncRNAs=adata[:, adata.var["gene_type"] == "lncRNA"].var["tau_usemean"]>=lt
-    lncRNAs_var = adata[:, adata.var["gene_type"] == "lncRNA"].var["vars"] <=0.5
-    ps=proteins[np.where(proteins)[0]].index
-    psv=proteins_var[np.where(proteins_var)[0]].index
-    ls=lncRNAs[np.where(lncRNAs)[0]].index
-    lsv=lncRNAs_var[np.where(lncRNAs_var)[0]].index
-    resp=list(set(ps.values.tolist())&set(psv.values.tolist()))
-    resl=list(set(ls.values.tolist())&set(lsv.values.tolist()))
-    with open(path.replace("/h5ad/","/genelists/").replace("_qc_tau.h5ad","_lnc.txt"), 'w') as f:
-        for i in resl:
-            f.write(i + '\n')
-    with open(path.replace("/h5ad/", "/genelists/").replace("_qc_tau.h5ad", "_protein.txt"), 'w') as f:
-        for i in resp:
-            f.write(i + '\n')
-    return resp,resl
+    proteins=adata[:,(adata.var["gene_type"]=="protein_coding") & (adata.var["tau_usemean"]>=pt)&(adata.var["vars"] <= 0.5)]
+    lncRNAs=adata[:,(adata.var["gene_type"]=="lncRNA") & (adata.var["tau_usemean"]>=lt)&(adata.var["vars"] <= 0.5)]
+    proteins.write(path.replace("/h5ad/","/enrichment_analysis_genes/h5ad/").replace(".h5ad","_proteins.h5ad"))
+    lncRNAs.write(path.replace("/h5ad/", "/enrichment_analysis_genes/h5ad/").replace(".h5ad", "lncRNAs.h5ad"))
+    p_clusters=list(set(proteins.var["tau_cluster"].values.tolist()))
+    p_clusters.sort()
+    l_clusters = list(set(lncRNAs.var["tau_cluster"].values.tolist()))
+    l_clusters.sort()
+    pdata={}
+    for pc in p_clusters:
+        pdata[pc]=proteins.var[proteins.var["tau_cluster"]==pc]["gene"].values.tolist()
+    df=fillDataFrame(pdata)
+    df.to_csv(path.replace("/h5ad/", "/enrichment_analysis_genes/csv/").replace(".h5ad", "_protein.csv"), index=None)
+    ldata = {}
+    for lc in l_clusters:
+        ldata[lc] = lncRNAs.var[lncRNAs.var["tau_cluster"] == lc]["gene"].values.tolist()
+    df = fillDataFrame(ldata)
+    df.to_csv(path.replace("/h5ad/", "/enrichment_analysis_genes/csv/").replace(".h5ad", "_lncRNAs.csv"), index=None)
+
+def fillDataFrame(data):
+    max_length = max(len(v) for v in data.values())
+    for key in data:
+        data[key] += [''] * (max_length - len(data[key]))
+
+    return pd.DataFrame(data)
 def getCoexpress(path,genelist):
     n=len(genelist)
     adata=sc.read_h5ad(path)
@@ -58,16 +66,7 @@ def getCoexpress(path,genelist):
     with open(path.replace("/qch5ad_tau/h5ad/","/coexpress/").replace("_qc_tau.h5ad",".txt"), 'w') as f:
         f.writelines("x\ty\tdis\n")
         f.writelines(res)
-path = "../data/raw/gse156728/CD8/qch5ad_tau/h5ad/"
-names=os.listdir(path)
-for n in names:
-    print(path+n)
-    print(">>>>>>>>>>>>>>")
-    a, b = getNum(path+n, 0.10)
-    p,l = get_genelist(path+n, a, b)
-    print(len(p),">>>>>>>",len(l))
-    # getCoexpress(path+n, listgene)
-    # exit()
+
 
 # copath = "../data/raw/gse156728/CD8/coexpress/GSE156728_BC_10X.CD8.txt"
 # data=pd.read_table(copath)
