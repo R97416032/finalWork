@@ -9,13 +9,14 @@ taupath="../data/raw/gse156728/CD8/qch5ad_tau/"
 
 
 #注意路径需要qc后的新路径,计算各个tau以及表达最大的类别
-# names=os.listdir(path)
-# taucsvs=os.listdir(taupath)
-# for n in names:
-#     print(n)
-#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-#     tau(path+n)
-#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+names=os.listdir(path)
+taucsvs=os.listdir(taupath)
+for n in names:
+    print(n)
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    tau(path+n)
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    exit()
 
 #看分布
 # for n in taucsvs:

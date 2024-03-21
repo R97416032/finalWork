@@ -20,23 +20,24 @@ def getNum(path,threshold):
     return protein_nums[-int(len(protein_nums)*threshold)],lncRNA_nums[-int(len(lncRNA_nums)*threshold)]
 
 def get_genelist(path,pt,lt):
+    #使用均值的版本，使用其他指标需要修改对应字段
     adata=sc.read_h5ad(path)
     proteins=adata[:,(adata.var["gene_type"]=="protein_coding") & (adata.var["tau_usemean"]>=pt)&(adata.var["vars"] <= 0.5)]
     lncRNAs=adata[:,(adata.var["gene_type"]=="lncRNA") & (adata.var["tau_usemean"]>=lt)&(adata.var["vars"] <= 0.5)]
     proteins.write(path.replace("/h5ad/","/enrichment_analysis_genes/h5ad/").replace(".h5ad","_proteins.h5ad"))
     lncRNAs.write(path.replace("/h5ad/", "/enrichment_analysis_genes/h5ad/").replace(".h5ad", "lncRNAs.h5ad"))
-    p_clusters=list(set(proteins.var["tau_cluster"].values.tolist()))
+    p_clusters=list(set(proteins.var["tau_cluster4mean"].values.tolist()))
     p_clusters.sort()
-    l_clusters = list(set(lncRNAs.var["tau_cluster"].values.tolist()))
+    l_clusters = list(set(lncRNAs.var["tau_cluster4mean"].values.tolist()))
     l_clusters.sort()
     pdata={}
     for pc in p_clusters:
-        pdata[pc]=proteins.var[proteins.var["tau_cluster"]==pc]["gene"].values.tolist()
+        pdata[pc]=proteins.var[proteins.var["tau_cluster4mean"]==pc]["gene"].values.tolist()
     df=fillDataFrame(pdata)
     df.to_csv(path.replace("/h5ad/", "/enrichment_analysis_genes/csv/").replace(".h5ad", "_protein.csv"), index=None)
     ldata = {}
     for lc in l_clusters:
-        ldata[lc] = lncRNAs.var[lncRNAs.var["tau_cluster"] == lc]["gene"].values.tolist()
+        ldata[lc] = lncRNAs.var[lncRNAs.var["tau_cluster4mean"] == lc]["gene"].values.tolist()
     df = fillDataFrame(ldata)
     df.to_csv(path.replace("/h5ad/", "/enrichment_analysis_genes/csv/").replace(".h5ad", "_lncRNAs.csv"), index=None)
 
